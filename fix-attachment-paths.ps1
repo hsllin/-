@@ -1,13 +1,12 @@
 $root = (Get-Location).Path
 Get-ChildItem -Recurse -Filter *.md -File | ForEach-Object {
-  $rel = $_.DirectoryName.Substring($root.Length).TrimStart('\')
-  if (-not $rel) { return }
-  $depth = ($rel -split '\\').Count
-  $prefix = '../' * $depth
-  $c = [IO.File]::ReadAllText($_.FullName)
-  $n = $c -replace '\((?:\./)?attachments/', "($prefix`attachments/"
+  $c = [System.IO.File]::ReadAllText($_.FullName)
+  # 去掉 BEL 字符（\u0007），把  ttachments 修回 attachments
+  $n = $c -replace '\u0007ttachments/', 'attachments/'
+  $n = $n -replace '\x07ttachments/', 'attachments/'
   if ($n -ne $c) {
-    [IO.File]::WriteAllText($_.FullName, $n)
-    Write-Host "updated:" $_.Name
+    [System.IO.File]::WriteAllText($_.FullName, $n, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "已修复:" $_.FullName.Substring($root.Length + 1)
   }
 }
+Write-Host "修复完成"
